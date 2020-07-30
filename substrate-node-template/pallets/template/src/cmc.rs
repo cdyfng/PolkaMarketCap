@@ -1,8 +1,11 @@
-use reqwest::get;
+//use reqwest::get;
+use sp_std::prelude::*;
 use alt_serde::Deserialize;
-use std::collections::{HashMap, HashSet};
+//use std::collections::{HashMap, HashSet};
+use sp_std::collections::btree_map::BTreeMap;
+use sp_std::collections::btree_set::BTreeSet;
 use std::time::SystemTime;
-
+use frame_support::debug;
 
 const CMC_BASE_URL: &str = "https://pro-api.coinmarketcap.com";
 const CM_BASE_URL: &str = "https://coinmetrics.io/api";
@@ -10,9 +13,9 @@ const CM_BASE_URL: &str = "https://coinmetrics.io/api";
 #[serde(crate = "alt_serde")]
 #[derive(Deserialize)]
 pub struct CMCStatus {
-    pub timestamp: Option<String>,
+    pub timestamp: Option<Vec<u8>>,
     pub error_code: u64,
-    pub error_message: Option<String>,
+    pub error_message: Option<Vec<u8>>,
     pub elapsed: u64,
     pub credit_count: u64,
 }
@@ -25,23 +28,23 @@ pub struct CMCQuote {
     pub percent_change_24h: f64,
     pub percent_change_7d: f64,
     pub market_cap: f64,
-    pub last_updated: Option<String>,
+    pub last_updated: Option<Vec<u8>>,
 }
 #[serde(crate = "alt_serde")]
 #[derive(Deserialize)]
 pub struct CMCListing {
     pub id: u64,
-    pub name: String,
-    pub symbol: String,
-    pub slug: String,
+    pub name: Vec<u8>,
+    pub symbol: Vec<u8>,
+    pub slug: Vec<u8>,
     pub cmc_rank: u64,
     pub num_market_pairs: u64,
     pub circulating_supply: Option<f64>,
     pub total_supply: Option<f64>,
     pub max_supply: Option<f64>,
-    pub last_updated: Option<String>,
-    pub date_added: Option<String>,
-    pub quote: HashMap<String, CMCQuote>,
+    pub last_updated: Option<Vec<u8>>,
+    pub date_added: Option<Vec<u8>>,
+    pub quote: BTreeMap<Vec<u8>, CMCQuote>,
 }
 #[serde(crate = "alt_serde")]
 #[derive(Deserialize)]
@@ -51,7 +54,7 @@ pub struct CMCListingResponse {
 }
 impl CMCListingResponse {
     pub fn fill_usd(mut self) -> Self {
-        let mut quote_map = HashMap::new();
+        let mut quote_map = BTreeMap::new();
         quote_map.insert(
             "USD".to_owned(),
             CMCQuote {
@@ -66,9 +69,9 @@ impl CMCListingResponse {
         );
         self.data.push(CMCListing {
             id: 99999,
-            name: "USD".to_owned(),
-            symbol: "USD".to_owned(),
-            slug: "USD".to_owned(),
+            name: b"USD".to_vec(),
+            symbol: b"USD".to_vec(),
+            slug: b"USD".to_vec(),
             cmc_rank: 99999,
             num_market_pairs: 1,
             circulating_supply: None,
@@ -84,15 +87,15 @@ impl CMCListingResponse {
 #[serde(crate = "alt_serde")]
 #[derive(Deserialize)]
 pub struct CMCHistoricalQuote {
-    pub timestamp: String,
-    pub quote: HashMap<String, CMCQuote>,
+    pub timestamp: Vec<u8>,
+    pub quote: BTreeMap<Vec<u8>, CMCQuote>,
 }
 #[serde(crate = "alt_serde")]
 #[derive(Deserialize)]
 pub struct CMCHistoricalQuotes {
     pub id: u64,
-    pub name: String,
-    pub symbol: String,
+    pub name: Vec<u8>,
+    pub symbol: Vec<u8>,
     pub quotes: Vec<CMCHistoricalQuote>,
 }
 #[serde(crate = "alt_serde")]
@@ -101,10 +104,10 @@ pub struct CMCHistoricalQuotesResponse {
     pub result: Vec<(u64, f64)>,
 }
 pub struct CMCClient {
-    pub key: String,
+    pub key: Vec<u8>,
 }
 impl CMCClient {
-    pub fn new(key: String) -> Self {
+    pub fn new(key: Vec<u8>) -> Self {
         CMCClient { key: key }
     }
     pub fn latest_listings(&self, limit: u16) -> CMCListingResponse {
@@ -116,7 +119,7 @@ impl CMCClient {
             Ok(mut data) => match data.json() {
                 Ok(o) => o,
                 Err(e) => {
-                    println!("{:?}", e);
+                    debug::info!("{:?}", e);
                     panic!(e);
                 }
             },
@@ -158,8 +161,8 @@ impl CMCClient {
             Ok(mut data) => match data.json() {
                 Ok(o) => o,
                 Err(e) => {
-                    println!("{}", e);
-                    println!("{:?}", data);
+                    debug::info!("{}", e);
+                    debug::info!("{:?}", data);
                     panic!(e);
                 }
             },
@@ -169,14 +172,14 @@ impl CMCClient {
     }
 
     #[allow(unused)]
-    pub fn supported_assets(&self) -> HashSet<String> {
+    pub fn supported_assets(&self) -> BTreeSet<Vec<u8>> {
         let url: &str = &format!("{}/v1/get_supported_assets", CM_BASE_URL);
-        let body: HashSet<String> = match get(url) {
+        let body: BTreeSet<Vec<u8>> = match get(url) {
             Ok(mut data) => match data.json() {
                 Ok(o) => o,
                 Err(e) => {
-                    println!("{}", e);
-                    println!("{:?}", data);
+                    debug::info!("{}", e);
+                    debug::info!("{:?}", data);
                     panic!(e);
                 }
             },

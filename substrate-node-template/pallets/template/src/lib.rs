@@ -34,8 +34,10 @@ use alt_serde::{Deserialize, Deserializer};
 mod cmc;
 
 use crate::cmc::{CMCClient, CMCListing, CMCListingResponse};
-use std::collections::HashMap;
+//use std::collections::HashMap;
 //use std::time::{Duration, SystemTime};
+//use hashbrown::HashMap;
+use sp_std::collections::btree_map::BTreeMap;
 
 #[cfg(test)]
 mod mock;
@@ -46,7 +48,7 @@ mod tests;
 // Ethereum api
 pub const COINCAP_API_URL: &[u8] = b"https://api.coincap.io/v2/assets/ethereum";
 pub const CRYPTOCOMPARE_API_URL: &[u8] = b"https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD";
-const CMC_KEY: &str = "845c42cb-56b3-483b-a32f-baea0ed5d874";
+//const CMC_KEY: &str = "845c42cb-56b3-483b-a32f-baea0ed5d874";
 
 #[serde(crate = "alt_serde")]
 #[derive(Debug, Deserialize)]
@@ -157,13 +159,15 @@ decl_module! {
 			/*******
 			 * 学员们在这里追加逻辑
 			 *******/
-			let cmc = CMCClient::new(CMC_KEY.to_string());
+			//let cmc = CMCClient::new(CMC_KEY.to_string());
+			let cmc = CMCClient::new(b"845c42cb-56b3-483b-a32f-baea0ed5d874".to_vec());
 	        //let now = SystemTime::now();
  	        let prices = cmc.latest_listings(30);
 
         	let price_map = Self::cmc_listings_as_map(&prices);
         	//debug::info!("{:?}", now);
         	for (key, value) in price_map {
+            	//debug::info!("{} / {}", key, value.quote.get("USD").unwrap().price);
             	debug::info!("{} / {}", key, value.quote.get("USD").unwrap().price);
             //println!("{} ", key);
             //map.remove(key);
@@ -182,8 +186,8 @@ decl_module! {
 
 impl <T: Trait> Module<T> {
 
-	fn cmc_listings_as_map<'a>(listing: &'a CMCListingResponse) -> HashMap<String, &'a CMCListing> {
-   	 	let mut h_map = HashMap::new();
+	fn cmc_listings_as_map<'a>(listing: &'a CMCListingResponse) -> BTreeMap<Vec<u8>, &'a CMCListing> {
+   	 	let mut h_map = BTreeMap::new();
     	for l in &listing.data {
         	h_map.insert(l.symbol.to_owned(), l);
     	}
